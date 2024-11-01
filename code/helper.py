@@ -77,7 +77,8 @@ commands = {
     'pdf': 'Generate a pdf for Income or History',
     'savings_tracker': 'tracks savings',
     'csv':  'Generate a csv file for Income or Expenses',
-    'scan_receipt': 'Scan a receipt using AI to upload transactions'
+    'scan_receipt': 'Scan a receipt using AI to upload transactions',
+    'csv_between_dates': 'Generate a csv file for Income or Expenses between user set dates.'
 }
 
 dateFormat = '%d-%b-%Y'

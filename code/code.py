@@ -26,6 +26,7 @@ import display_currency
 import chatGPT_ext
 import get_csv
 import scan_receipt
+import csv_between_dates
 
 configs = Properties()
 
@@ -152,6 +153,10 @@ def command_category(message):
 @bot.message_handler(commands=['scan_receipt'])
 def command_scan_receipt(message):
     scan_receipt.run(message, bot)
+
+@bot.message_handler(commands=['csv_between_dates'])
+def command_csv_between_dates(message):
+    csv_between_dates.run(message, bot)
 
 
 @bot.message_handler(commands=['savings_tracker'])
