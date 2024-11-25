@@ -56,21 +56,29 @@ def get_end_date(message, bot, selectedType, chat_id, start_date):
             return response
 
         user_history = helper.getUserHistory(chat_id, selectedType) or []
-
-        filtered_history = [
-            rec for rec in user_history if start_date <= datetime.strptime(rec.split(",")[0], "%Y-%m-%d %H:%M:%S") <= end_date
-        ]
-
+        filtered_history = []
+        for record in user_history:
+            try:
+                date_time, category, amount = record.split(",")
+                date, _ = date_time.split(" ")
+                record_date = datetime.strptime(date, "%d-%b-%Y")
+                
+                if start_date <= record_date <= end_date:
+                    filtered_history.append([date, category, float(amount)])
+            except ValueError:
+                logging.warning(f"Skipping malformed record: {record}")
+                continue
+        print(filtered_history)
         if not filtered_history:
-            response = f"No {selectedType} records found between {start_date.date()} and {end_date.date()}."
-            bot.reply_to(message, response)
-            return response
-
+            bot.send_message(chat_id, "No records found within the selected date range!")
+            return
+        
         pdf_status = generate_pdf(filtered_history, selectedType, chat_id, bot)
-        bot.reply_to(message, pdf_status)  # Send feedback message about PDF generation status
+        #bot.reply_to(message, pdf_status)  # Send feedback message about PDF generation status
         return pdf_status
 
-    except ValueError:
+    except ValueError as e:
+        print(e)
         response = "Invalid date format. Please use YYYY-MM-DD."
         bot.reply_to(message, response)
         return response
@@ -91,9 +99,8 @@ def generate_pdf(user_history, selectedType, chat_id, bot):
     top = 0.8
 
     for rec in user_history:
-        date, category, amount = rec.split(",")
-        date, time = date.split(" ")
-        rec_str = f"{amount}$ {category} {selectedType.lower()} on {date} at {time}"
+        date, category, amount = rec[0], rec[1], rec[2]
+        rec_str = f"{amount}$ {category} {selectedType.lower()} on {date}ß"
         plt.text(
             0,
             top,
@@ -107,31 +114,17 @@ def generate_pdf(user_history, selectedType, chat_id, bot):
         top -= 0.15
 
     plt.axis("off")
-    pdf_path = f"history_{chat_id}.png"  # Changed to PNG
+    #pdf_path = f"history_{chat_id}.png"  # Changed to PNG
     try:
-        plt.savefig(pdf_path)
+        plt.savefig("history.pdf")
         plt.close()
-        print(f"PDF saved to {pdf_path}")  # Debugging output
+        bot.send_document(chat_id, open("history.pdf", "rb"))
+        print(f"PDF saved.")  # Debugging output
     except Exception as e:
         response = f"Error saving the PDF: {str(e)}"
         bot.reply_to(chat_id, response)
         return response
 
-    if os.path.exists(pdf_path):
-        try:
-            with open(pdf_path, "rb") as pdf_file:
-                bot.send_document(chat_id, pdf_file)
-            os.remove(pdf_path)
-            response = "PDF generated and sent successfully!"
-            return response
-        except Exception as e:
-            response = f"Failed to send PDF: {str(e)}"
-            bot.reply_to(chat_id, response)
-            return response
-    else:
-        response = "Failed to generate PDF."
-        bot.reply_to(chat_id, response)
-        return response
 
 
 
